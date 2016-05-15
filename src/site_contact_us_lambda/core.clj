@@ -13,13 +13,13 @@
 (def ses-client ^AmazonSimpleEmailServiceClient (AmazonSimpleEmailServiceClient.))
 
 (defn compose-body [details]
-  (str "Congratulations! Someone actually wants to talk to you:\n\n"
+  (str "FROM STAGING: Congratulations! Someone actually wants to talk to you:\n\n"
        ;; We like Clojure so just send us the map literal!
        (with-out-str
          (clojure.pprint/pprint details))))
 
 (defn send-email [details]
-  (let [to-addresses (.withToAddresses (Destination.) ["prachetas@epxlabs.com"])
+  (let [to-addresses (.withToAddresses (Destination.) ["prachetas@epxlabs.com" "evan@epxlabs.com"])
         body (Body. (Content. (compose-body details)))
         message (Message. (Content. "A Wild Contact Us Submission Appears!") body)]
     (.sendEmail
@@ -29,8 +29,9 @@
 
 (defn -handleRequest [this is os context]
   (let [w (io/writer os)]
-    (-> (json/read (io/reader is) :key-fn keyword)
-         (send-email)
-         ;; Write JSON to the writer
-         (json/write w))
+    (-> (io/reader is)
+        (json/read :key-fn keyword)
+        (send-email)
+        ;; Write JSON to the writer
+        (json/write w))
     (.flush w)))
